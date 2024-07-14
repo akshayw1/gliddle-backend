@@ -98,6 +98,143 @@ The repository is organized into three main folders:
    npm run deploy
    ```
 
+# API Documentation
+
+## Overview
+
+This documentation provides details about the endpoints, usage, and functionalities of the API server that handles project deployment using AWS ECS and real-time log streaming via Redis and Socket.io.
+
+## Base URL
+
+- Local Development: `http://localhost:6100`
+
+## Endpoints
+
+### 1. Create Project
+
+#### URL
+
+`POST /project`
+
+#### Description
+
+Creates a new project and initiates the deployment process by running an AWS ECS task.
+
+#### Request
+
+- **URL:** `/project`
+- **Method:** `POST`
+- **Headers:** 
+  - `Content-Type: application/json`
+- **Body Parameters:**
+  - `gitURL` (string, required): The URL of the Git repository.
+  - `slug` (string, optional): A custom slug for the project. If not provided, a random slug will be generated.
+
+##### Example Request
+
+```json
+{
+  "gitURL": "https://github.com/user/repository.git",
+  "slug": "custom-slug"
+}
+```
+
+#### Response
+
+- **Status:** `200 OK`
+- **Body:**
+  - `status` (string): Indicates the status of the request, e.g., 'queued'.
+  - `data` (object): Contains project details.
+    - `projectSlug` (string): The slug of the project.
+    - `url` (string): The URL where the project will be accessible.
+
+##### Example Response
+
+```json
+{
+  "status": "queued",
+  "data": {
+    "projectSlug": "custom-slug",
+    "url": "http://custom-slug.localhost:8000"
+  }
+}
+```
+
+## Real-Time Log Streaming
+
+### Socket.io
+
+#### Description
+
+The Socket.io server allows clients to subscribe to real-time log updates for specific projects.
+
+#### Connection
+
+- **URL:** `http://localhost:9002`
+- **Method:** `Socket.io`
+
+#### Events
+
+- **`connection`**: Triggered when a client connects.
+- **`subscribe`**: Allows a client to join a specific log channel.
+  - **Parameters:** `channel` (string) - The log channel to join.
+- **`message`**: Sends messages (log updates) to clients in the channel.
+
+##### Example Usage
+
+```javascript
+const socket = io('http://localhost:9002')
+
+socket.on('connect', () => {
+  console.log('Connected to socket server')
+  socket.emit('subscribe', 'logs:custom-slug')
+})
+
+socket.on('message', (message) => {
+  console.log('Log update:', message)
+})
+```
+
+## Environment Variables
+
+The following environment variables are used by the API server:
+
+- `REDIS_URL`: The URL of the Redis instance.
+- `IAM_ACCESS_KEY`: AWS IAM access key.
+- `IAM_SECRET_KEY`: AWS IAM secret key.
+- `CLUSTER_ARN`: The ARN of the AWS ECS cluster.
+- `TASK_ARN`: The ARN of the AWS ECS task definition.
+
+## Middleware
+
+### CORS
+
+The server uses CORS middleware to allow cross-origin requests from any origin.
+
+#### Configuration
+
+- **Origin:** `*` (allows all origins)
+- **Methods:** `GET`, `POST`, `PUT`, `DELETE`
+- **Allowed Headers:** `Content-Type`, `Authorization`
+
+### Body Parser
+
+The server uses the `express.json()` middleware to parse JSON bodies of incoming requests.
+
+## Running the Server
+
+To start the API server, run:
+
+```bash
+node server.js
+```
+
+The server will listen on port `6100`, and the Socket.io server will listen on port `9002`.
+
+## Conclusion
+
+This documentation provides the necessary details to interact with the API server for project deployment and real-time log streaming. For any issues or further assistance, please refer to the source code or contact the developer team.
+
 ## Usage
 
 1. Navigate to the Backend Server API endpoint to manage your deployments.
